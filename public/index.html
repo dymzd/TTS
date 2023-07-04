@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <input id="textFile" type="file">
+    <select id="language" onchange="updateVoiceOptions()">
+        <option value="en-US">英語</option>
+        <option value="ja-JP">日本語</option>
+    </select>
+    <select id="name">
+        <!-- 音質オプションはJavaScriptで動的に更新されます -->
+    </select>
+    <input id="speakingRate" type="number" value="1" min="0.25" max="4.0" step="0.01">
+    <input id="pitch" type="number" value="0" min="-20" max="20">
+    <button onclick="synthesizeSpeech()">Synthesize</button>
+
+    <script>
+    const voiceOptions = {
+        'ja-JP': [
+            'ja-JP-Neural2-B', 'ja-JP-Neural2-C', 'ja-JP-Neural2-D', 'ja-JP-Standard-A', 'ja-JP-Standard-B',
+            'ja-JP-Standard-C', 'ja-JP-Standard-D', 'ja-JP-Wavenet-A', 'ja-JP-Wavenet-B', 'ja-JP-Wavenet-C', 'ja-JP-Wavenet-D'
+        ],
+        'en-US': [
+            'en-US-Neural2-H', 'en-US-Neural2-I', 'en-US-News-K', 'en-US-News-M', 'en-US-Standard-B', 'en-US-Standard-C',
+            'en-US-Standard-D', 'en-US-Standard-E', 'en-US-Studio-M', 'en-US-Studio-O'
+        ]
+    };
+
+    function updateVoiceOptions() {
+        const language = document.getElementById('language').value;
+        const nameSelect = document.getElementById('name');
+        nameSelect.innerHTML = '';
+        voiceOptions[language].forEach(voiceOption => {
+            const option = document.createElement('option');
+            option.value = voiceOption;
+            option.textContent = voiceOption;
+            nameSelect.appendChild(option);
+        });
+    }
+
+    function synthesizeSpeech() {
+        const textFile = document.getElementById('textFile').files[0];
+        const language = document.getElementById('language').value;
+        const name = document.getElementById('name').value;
+        const speakingRate = document.getElementById('speakingRate').value;
+        const pitch = document.getElementById('pitch').value;
+
+        const formData = new FormData();
+        formData.append('textFile', textFile);
+        formData.append('language', language);
+        formData.append('name', name);
+        formData.append('speakingRate', speakingRate);
+        formData.append('pitch', pitch);
+
+        fetch('/synthesize', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'output.mp3';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+    }
+
+    updateVoiceOptions();  // 初期化時に音質オプションを更新
+    </script>
+</body>
+</html>
